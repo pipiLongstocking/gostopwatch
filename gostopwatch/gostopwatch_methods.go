@@ -2,6 +2,9 @@ package gostopwatch
 
 import (
 	"errors"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -16,10 +19,12 @@ func NewGStopwatch(d time.Duration) (*GStopwatch, error) {
 		state:          stopwatchStatusStopped,
 		Done:           make(chan struct{}),
 		monitorStopSig: make(chan struct{}),
+		interrupt:      make(chan os.Signal, 1),
 		Tick:           make(chan time.Duration),
 		d:              d,
 		ticksLeft:      ticks,
 	}
+	signal.Notify(pt.interrupt, syscall.SIGINT, syscall.SIGTERM)
 	return pt, nil
 }
 
@@ -58,6 +63,7 @@ func (sw *GStopwatch) destroy() {
 	sw.Done <- struct{}{}
 	close(sw.Done)
 	close(sw.Tick)
+	close(sw.interrupt)
 }
 
 func (sw *GStopwatch) GetTimeLeft() time.Duration {
@@ -85,6 +91,11 @@ func (sw *GStopwatch) monitorProgress() {
 			}
 		case <-sw.monitorStopSig:
 			// end the timer
+			sw.setstate(stopwatchStatusStopped)
+			go func() { sw.destroy() }()
+			return
+		case <-sw.interrupt:
+			// Interrupt received
 			sw.setstate(stopwatchStatusStopped)
 			go func() { sw.destroy() }()
 			return

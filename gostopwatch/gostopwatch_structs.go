@@ -1,6 +1,7 @@
 package gostopwatch
 
 import (
+	"os"
 	"sync"
 	"time"
 )
@@ -40,6 +41,7 @@ type GStopwatch struct {
 
 	Done           chan struct{}      // Done channel which issues the signal for the end of the tiicker.
 	monitorStopSig chan struct{}      // Channel to issue the signal to stop the monitoring routine
+	interrupt      chan os.Signal     // Channel for listening to interrupts
 	Tick           chan time.Duration // Channel that returns the time left in seconds after every Tick
 
 	d         time.Duration // The duration for which the ticker should run.
