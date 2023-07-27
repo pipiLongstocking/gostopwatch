@@ -2,7 +2,6 @@ package gostopwatch
 
 import (
 	"errors"
-	"log"
 	"time"
 )
 
@@ -25,24 +24,26 @@ func NewGStopwatch(d time.Duration) (*GStopwatch, error) {
 }
 
 func (sw *GStopwatch) getState() StopwatchState {
-	sw.stateRwMutex.Lock()
-	defer sw.stateRwMutex.Unlock()
+	sw.stateLock.RLock()
+	defer sw.stateLock.RUnlock()
 	return sw.state
 }
 
 func (sw *GStopwatch) setstate(s StopwatchState) {
-	sw.stateRwMutex.Lock()
-	defer sw.stateRwMutex.Unlock()
+	sw.stateLock.Lock()
+	defer sw.stateLock.Unlock()
 	sw.state = s
 }
 
 func (sw *GStopwatch) GetState() string {
-	sw.stateRwMutex.Lock()
-	defer sw.stateRwMutex.Unlock()
+	sw.stateLock.RLock()
+	defer sw.stateLock.RUnlock()
 	return sw.state.String()
 }
 
 func (sw *GStopwatch) Start() error {
+	sw.watchOp.Lock()
+	defer sw.watchOp.Unlock()
 	if sw.getState() != stopwatchStatusStopped {
 		return errors.New("ticker is not in stopped state")
 	}
@@ -54,37 +55,46 @@ func (sw *GStopwatch) Start() error {
 
 func (sw *GStopwatch) destroy() {
 	sw.t.Stop()
+	sw.Done <- struct{}{}
+	close(sw.Done)
+	close(sw.Tick)
+}
+
+func (sw *GStopwatch) GetTimeLeft() time.Duration {
+	sw.tlLock.RLock()
+	defer sw.tlLock.RUnlock()
+	return time.Duration(sw.ticksLeft) * time.Second
 }
 
 func (sw *GStopwatch) monitorProgress() {
 	for {
-		if sw.getState() == stopwatchStatusPaused {
-			continue
-		}
 		select {
 		case <-sw.t.C:
+			if sw.getState() == stopwatchStatusPaused {
+				continue
+			}
+			sw.tlLock.Lock()
 			sw.ticksLeft -= 1
-			sw.Tick <- time.Duration(sw.ticksLeft)
-			log.Printf("ticks left %d", sw.ticksLeft)
+			sw.tlLock.Unlock()
+			sw.Tick <- time.Duration(sw.ticksLeft) * time.Second
 			if sw.ticksLeft == 0 {
 				// end the timer
-				log.Printf("ended the monitor routine")
 				sw.setstate(stopwatchStatusStopped)
-				sw.Done <- struct{}{}
-				sw.destroy()
+				go func() { sw.destroy() }()
 				return
 			}
 		case <-sw.monitorStopSig:
 			// end the timer
 			sw.setstate(stopwatchStatusStopped)
-			sw.Done <- struct{}{}
-			sw.destroy()
+			go func() { sw.destroy() }()
 			return
 		}
 	}
 }
 
 func (sw *GStopwatch) Stop() error {
+	sw.watchOp.Lock()
+	defer sw.watchOp.Unlock()
 	if sw.getState() != stopwatchStatusRunning {
 		return errors.New("ticker is not in running state")
 	}
@@ -94,6 +104,8 @@ func (sw *GStopwatch) Stop() error {
 }
 
 func (sw *GStopwatch) Pause() error {
+	sw.watchOp.Lock()
+	defer sw.watchOp.Unlock()
 	if sw.getState() != stopwatchStatusRunning {
 		return errors.New("ticker is not in running state")
 	}
@@ -102,6 +114,8 @@ func (sw *GStopwatch) Pause() error {
 }
 
 func (sw *GStopwatch) Resume() error {
+	sw.watchOp.Lock()
+	defer sw.watchOp.Unlock()
 	if sw.getState() != stopwatchStatusPaused {
 		return errors.New("ticker is not in paused state")
 	}

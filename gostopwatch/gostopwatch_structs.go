@@ -34,9 +34,9 @@ const (
 )
 
 type GStopwatch struct {
-	t            *time.Ticker   // An internal ticker for issuing periodic ticks.
-	state        StopwatchState // state denotes the current state of GStopwatch.
-	stateRwMutex sync.Mutex     // RWmutex for read/writer operations to state.
+	t         *time.Ticker   // An internal ticker for issuing periodic ticks.
+	state     StopwatchState // state denotes the current state of GStopwatch.
+	stateLock sync.RWMutex   // RWmutex for read/writer operations to state.
 
 	Done           chan struct{}      // Done channel which issues the signal for the end of the tiicker.
 	monitorStopSig chan struct{}      // Channel to issue the signal to stop the monitoring routine
@@ -44,6 +44,8 @@ type GStopwatch struct {
 
 	d         time.Duration // The duration for which the ticker should run.
 	ticksLeft int           // Ticks left in the ticker
-	//TODO: Add RWLock for ticksLeft.
+	tlLock    sync.RWMutex  //RWMutex for issuing the GetTimeLeft() method
 	//TODO: Add locks.
+
+	watchOp sync.Mutex // Mutex for issuing Resume(), Pause(), Start(), Stop() operations
 }
