@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gpomo/gostopwatch"
+	"gostopwatch/gostopwatch"
 	"log"
 	"time"
 )

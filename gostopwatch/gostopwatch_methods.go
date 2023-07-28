@@ -104,7 +104,7 @@ func (sw *GStopwatch) monitorProgress() {
 		case <-sw.interrupt:
 			// Interrupt received
 			sw.setstate(stopwatchStatusStopped)
-			go func() { sw.destroy() }()
+			sw.destroy()
 			return
 		}
 	}
