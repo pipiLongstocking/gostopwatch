@@ -52,7 +52,7 @@ func (sw *GStopwatch) GetState() string {
 
 // Start starts the GStopwatch. Errors if the GStopwatch is not in stopped state.
 // The tick channel, done channel, and the error are returned.
-// The tick channel returns the timestamp of the timer's tick, every second and ends once the timer ends.
+// The tick channel returns the seconds left after every tick.
 // The done channel returns an empty struct signal once the timer ends. Use this to stop the timer monitoring.
 // Use GetState to check the state first before issuing the command.
 func (sw *GStopwatch) Start() (<-chan time.Duration, <-chan struct{}, error) {
