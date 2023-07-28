@@ -39,15 +39,17 @@ type GStopwatch struct {
 	state     StopwatchState // state denotes the current state of GStopwatch.
 	stateLock sync.RWMutex   // RWmutex for read/writer operations to state.
 
-	Done           chan struct{}      // Done channel which issues the signal for the end of the tiicker.
-	monitorStopSig chan struct{}      // Channel to issue the signal to stop the monitoring routine
-	interrupt      chan os.Signal     // Channel for listening to interrupts
-	Tick           chan time.Duration // Channel that returns the time left in seconds after every Tick
+	Done chan struct{} // Done channel which issues the signal for the end of the ticker.
+	// Poll on this channel to check when the timer ends.
+
+	monitorStopSig chan struct{}      // Channel to issue the signal to stop the monitoring routine.
+	interrupt      chan os.Signal     // Channel for listening to interrupts.
+	Tick           chan time.Duration // Channel that returns the time left in seconds after every Tick.
+	// Poll on this channel to check the time left in the GStopwatch.
 
 	d         time.Duration // The duration for which the ticker should run.
-	ticksLeft int           // Ticks left in the ticker
-	tlLock    sync.RWMutex  //RWMutex for issuing the GetTimeLeft() method
-	//TODO: Add locks.
+	ticksLeft int           // Ticks left in the ticker.
+	tlLock    sync.RWMutex  //RWMutex for issuing the GetTimeLeft() method.
 
-	watchOp sync.Mutex // Mutex for issuing Resume(), Pause(), Start(), Stop() operations
+	watchOp sync.Mutex // Mutex for issuing Resume(), Pause(), Start(), Stop() operations.
 }

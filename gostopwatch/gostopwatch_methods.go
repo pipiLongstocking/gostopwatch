@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// NewGStopwatch creates and returns a GStopwatch
+// NewGStopwatch creates and returns a GStopwatch.
 func NewGStopwatch(d time.Duration) (*GStopwatch, error) {
 	ticks := int(d.Seconds())
 	if ticks < minStopwatchTicks || ticks > maxStopwatchTicks {
@@ -28,6 +28,8 @@ func NewGStopwatch(d time.Duration) (*GStopwatch, error) {
 	return pt, nil
 }
 
+// getState returns the current state of the GStopwatch in the enum form.
+// only for internal use.
 func (sw *GStopwatch) getState() StopwatchState {
 	sw.stateLock.RLock()
 	defer sw.stateLock.RUnlock()
@@ -40,12 +42,16 @@ func (sw *GStopwatch) setstate(s StopwatchState) {
 	sw.state = s
 }
 
+// GetState returns the current state of the GStopwatch in string form.
+// The possible values are "stopped", "running" and "paused".
 func (sw *GStopwatch) GetState() string {
 	sw.stateLock.RLock()
 	defer sw.stateLock.RUnlock()
 	return sw.state.String()
 }
 
+// Start starts the GStopwatch. Panics if the GStopwatch is not in stopped state.
+// Use GetState to check the state first before issuing the command.
 func (sw *GStopwatch) Start() error {
 	sw.watchOp.Lock()
 	defer sw.watchOp.Unlock()
@@ -66,6 +72,7 @@ func (sw *GStopwatch) destroy() {
 	close(sw.interrupt)
 }
 
+// GetTimeLeft returns the number of seconds left in the timer.
 func (sw *GStopwatch) GetTimeLeft() time.Duration {
 	sw.tlLock.RLock()
 	defer sw.tlLock.RUnlock()
@@ -103,6 +110,8 @@ func (sw *GStopwatch) monitorProgress() {
 	}
 }
 
+// Stop stops the GStopwatch. Panics if the GStopwatch is not in running state.
+// Use GetState to check the state first before issuing the command.
 func (sw *GStopwatch) Stop() error {
 	sw.watchOp.Lock()
 	defer sw.watchOp.Unlock()
@@ -114,6 +123,8 @@ func (sw *GStopwatch) Stop() error {
 	return nil
 }
 
+// Pause pauses the GStopwatch. Panics if the GStopwatch is not in running state.
+// Use GetState to check the state first before issuing the command.
 func (sw *GStopwatch) Pause() error {
 	sw.watchOp.Lock()
 	defer sw.watchOp.Unlock()
@@ -124,6 +135,8 @@ func (sw *GStopwatch) Pause() error {
 	return nil
 }
 
+// Resume resumes the GStopwatch. Panics if the GStopwatch is not in paused state.
+// Use GetState to check the state first before issuing the command.
 func (sw *GStopwatch) Resume() error {
 	sw.watchOp.Lock()
 	defer sw.watchOp.Unlock()
