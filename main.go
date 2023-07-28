@@ -7,4 +7,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	err = examples.PauseTimer()
+	if err != nil {
+		panic(err)
+	}
+	err = examples.StopTimer()
+	if err != nil {
+		panic(err)
+	}
 }
