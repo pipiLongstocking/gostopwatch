@@ -50,7 +50,7 @@ func (sw *GStopwatch) GetState() string {
 	return sw.state.String()
 }
 
-// Start starts the GStopwatch. Panics if the GStopwatch is not in stopped state.
+// Start starts the GStopwatch. Errors if the GStopwatch is not in stopped state.
 // Use GetState to check the state first before issuing the command.
 func (sw *GStopwatch) Start() error {
 	sw.watchOp.Lock()
@@ -110,7 +110,7 @@ func (sw *GStopwatch) monitorProgress() {
 	}
 }
 
-// Stop stops the GStopwatch. Panics if the GStopwatch is not in running state.
+// Stop stops the GStopwatch. Errors if the GStopwatch is not in running state.
 // Use GetState to check the state first before issuing the command.
 func (sw *GStopwatch) Stop() error {
 	sw.watchOp.Lock()
@@ -123,7 +123,7 @@ func (sw *GStopwatch) Stop() error {
 	return nil
 }
 
-// Pause pauses the GStopwatch. Panics if the GStopwatch is not in running state.
+// Pause pauses the GStopwatch. Errors if the GStopwatch is not in running state.
 // Use GetState to check the state first before issuing the command.
 func (sw *GStopwatch) Pause() error {
 	sw.watchOp.Lock()
@@ -135,7 +135,7 @@ func (sw *GStopwatch) Pause() error {
 	return nil
 }
 
-// Resume resumes the GStopwatch. Panics if the GStopwatch is not in paused state.
+// Resume resumes the GStopwatch. Errors if the GStopwatch is not in paused state.
 // Use GetState to check the state first before issuing the command.
 func (sw *GStopwatch) Resume() error {
 	sw.watchOp.Lock()
