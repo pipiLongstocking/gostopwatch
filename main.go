@@ -11,16 +11,16 @@ func TestStopwatch() {
 	if err != nil {
 		panic(err)
 	}
-	err = p.Start()
+	tick, done, err := p.Start()
 	if err != nil {
 		panic(err)
 	}
 	endTimer := false
 	for {
 		select {
-		case x := <-p.Tick:
+		case x := <-tick:
 			log.Printf("channel op: %+v", x)
-		case <-p.Done:
+		case <-done:
 			log.Println("timer ended")
 			endTimer = true
 		}
@@ -37,7 +37,7 @@ func TestStopwatchPause() {
 	if err != nil {
 		panic(err)
 	}
-	err = p.Start()
+	tick, done, err := p.Start()
 	if err != nil {
 		panic(err)
 	}
@@ -55,9 +55,9 @@ func TestStopwatchPause() {
 	endTimer := false
 	for {
 		select {
-		case x := <-p.Tick:
+		case x := <-tick:
 			log.Printf("channel op: %+v", x)
-		case <-p.Done:
+		case <-done:
 			log.Println("timer ended")
 			endTimer = true
 		}

@@ -17,10 +17,10 @@ func NewGStopwatch(d time.Duration) (*GStopwatch, error) {
 	pt := &GStopwatch{
 		t:              nil,
 		state:          stopwatchStatusStopped,
-		Done:           make(chan struct{}),
+		done:           make(chan struct{}),
 		monitorStopSig: make(chan struct{}),
 		interrupt:      make(chan os.Signal, 1),
-		Tick:           make(chan time.Duration),
+		tick:           make(chan time.Duration),
 		d:              d,
 		ticksLeft:      ticks,
 	}
@@ -51,24 +51,27 @@ func (sw *GStopwatch) GetState() string {
 }
 
 // Start starts the GStopwatch. Errors if the GStopwatch is not in stopped state.
+// The tick channel, done channel, and the error are returned.
+// The tick channel returns the timestamp of the timer's tick, every second and ends once the timer ends.
+// The done channel returns an empty struct signal once the timer ends. Use this to stop the timer monitoring.
 // Use GetState to check the state first before issuing the command.
-func (sw *GStopwatch) Start() error {
+func (sw *GStopwatch) Start() (<-chan time.Duration, <-chan struct{}, error) {
 	sw.watchOp.Lock()
 	defer sw.watchOp.Unlock()
 	if sw.getState() != stopwatchStatusStopped {
-		return errors.New("ticker is not in stopped state")
+		return nil, nil, errors.New("ticker is not in stopped state")
 	}
 	sw.setstate(stopwatchStatusRunning)
 	sw.t = time.NewTicker(tickerFrequency)
 	go sw.monitorProgress()
-	return nil
+	return sw.tick, sw.done, nil
 }
 
 func (sw *GStopwatch) destroy() {
 	sw.t.Stop()
-	sw.Done <- struct{}{}
-	close(sw.Done)
-	close(sw.Tick)
+	sw.done <- struct{}{}
+	close(sw.done)
+	close(sw.tick)
 	close(sw.interrupt)
 }
 
@@ -89,7 +92,7 @@ func (sw *GStopwatch) monitorProgress() {
 			sw.tlLock.Lock()
 			sw.ticksLeft -= 1
 			sw.tlLock.Unlock()
-			sw.Tick <- time.Duration(sw.ticksLeft) * time.Second
+			sw.tick <- time.Duration(sw.ticksLeft) * time.Second
 			if sw.ticksLeft == 0 {
 				// end the timer
 				sw.setstate(stopwatchStatusStopped)
